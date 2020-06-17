@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FastAPI</title>
+    <link rel="icon" href="{{ url_for("static", path="/images/favicon.ico") }}" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ url_for("static", path="/css/style.css") }}" />
+    <script src="{{ url_for("static", path="/js/vue.js") }}"></script>
+    <script src="{{ url_for("static", path="/js/axios.min.js") }}"></script>
+</head>
+<body>
+    <h1>Счётчики</h1>
+    {% raw %}
+    <div id="app">
+    
+    <div v-for="">
+    
+    </div>
+    <select v-model="indexType" v-on:change="onSelectType">
+        <option value="-1">все типы</option>
+        <option v-for="(ctype, index) in allTypes" :value="index">{{ ctype.title }}</option>
+    </select>
+    <select v-model="indexCounter" v-on:change="onSelectCounter">
+        <option value="-1" selected disabled>...выберите счетчик</option>
+        <option v-for="(counter, index) in allCounters" :value="index">{{ counter.description }}</option>
+    </select>
+    <input type="number" v-model="inputCounterValue" />
+    <button @click="onSendCounter">Передать</button>
+    <p v-if="errorMessage != ''" style="color: red;">{{ errorMessage }}</p>
+    </div>
+    {% endraw %}
+<script>
+var app = new Vue({
+    el: '#app',
+    data: {
+        allTypes: {},
+        indexType: -1,
+        allCounters: {},
+        actualCounters: {},
+        selectCounter: {},
+        indexCounter: -1,
+        lastCounter: {},
+        inputCounterValue: "",
+        errorMessage: "",
+    },
+    created: function () {
+        axios
+            .get("/api/counters/types")
+            .then(response => {
+                this.allTypes = response.data;
+            })
+            .catch(response => {
+                alert("error");
+            });
+        axios
+            .get("/api/counters")
+            .then(response => {
+                this.allCounters = response.data;
+            })
+            .catch(response => {
+                alert("error");
+            });
+    },
+    methods: {
+        onSelectType: function () {
+        return ;
+//        alert(this.ctypes[this.tid].id + ' ' + this.counters[this.cid].type);
+            if (this.cid != -1) {
+                if (this.tid != -1) {
+                    if (this.ctypes[this.tid].id != this.actualCounters[this.cid].type) {
+                        this.cid = -1;
+                        this.cvalue = "";
+                        this.error = "";
+                    }
+                }
+            }
+            //if (this.cid != -1 && this.tid != -1 && (this.ctypes[this.tid].id != this.counters[this.cid].type)) {
+            //    this.cid = -1;
+            //    this.cvalue = "";
+            //    this.error = "";
+            //}
+        },
+
+        onSelectCounter: function() {
+            this.selectCounter = this.allCounters[this.indexCounter];
+            return ;
+            this.selectCounter = this.actualCounters[this.cid];
+            axios
+                .get("/api/registry/" + this.actualCounters[this.cid].id)
+                .then(response => {
+                    if (response.data != "null") {
+                        this.error = "Последнее переданное показание: " + response.data.value + " от " + response.data.create_dt;
+                        this.cvalue = response.data.value;
+                        this.last = this.cvalue;
+                    }
+                    else {
+                        this.cvalue = "";
+                        this.last = "";
+                    }
+                })
+                .catch(response => {
+                    //alert("error");
+                    this.cvalue = "";
+                    this.error = "";
+                });
+         },
+        onSendCounter: function() {
+            alert(this.cvalue);
+        },
+    },
+    computed: {
+        _actualCounters: function() {
+            console.log("Run actualCounters()");
+//            if (this.sid != -1) var selType = this.
+            if (this.tid == -1) return this.counters;
+            var result = [];
+            for (index in this.counters) {
+                if (this.ctypes[this.tid].id == this.counters[index].type) result.push(this.counters[index]);
+            }
+            return result;
+        },
+        checkData: function() {
+            if ((this.cid) != -1 && (this.cvalue != "")) return true
+            else return false;
+        }
+     }
+})
+</script>
+</body>
+</html>
